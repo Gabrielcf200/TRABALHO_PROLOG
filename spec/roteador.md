@@ -1,61 +1,59 @@
 # Roteador e info_ramal (roteador.pl)
 
-Atende a seção 3 do [pedido original](../pedido-original.md). Usa os dados de [dados.md](dados.md) e as regras de [operacao.md](operacao.md). O formato de saída está em [contrato-python.md](contrato-python.md).
+Atende a seção 3 do [pedido original](../pedido-original.md). O código está em [`src/roteador.pl`](../src/roteador.pl). Usa os dados de [dados.md](dados.md) e as regras de [operacao.md](operacao.md). O formato de saída está em [contrato-python.md](contrato-python.md) (não repetido aqui).
 
 ## Entradas
 
 `rota(Origem, Destino, Dia, Hora, Resposta)`
 
-- `Origem` e `Destino` podem ser estação, apelido ou bairro. A ordem de resolução é: estação → apelido → `bairro_estacao/2`.
-- `Dia` é um dos três tipos de [operacao.md](operacao.md). `Hora` vem como `hora(H, M)`.
+- A ordem de validação é: dia → hora → origem → destino → mesma estação. O primeiro problema vira o `erro(...)`.
+- `Origem` e `Destino` podem ser estação, apelido ou bairro (`resolver_local/2`).
 
 ## Grafo
 
-- Nó = `no(Estacao, Ramal)`.
-- **Andar no trem:** de `no(E1, R)` para `no(E2, R)` quando E1 e E2 são paradas vizinhas de R **no modo vigente** naquele dia e hora. Ou seja, no expresso, piedade não existe para o japeri.
-- **Baldeação:** de `no(E, R1)` para `no(E, R2)` quando os dois ramais param em E naquele momento.
-- O trecho comum Central–Deodoro é o mesmo trilho para deodoro, japeri e santa_cruz. Ficar no mesmo trem **não** é baldeação: se o japeri parador passa em piedade, quem vai de piedade a nilopolis pega o japeri direto.
+- Nó = `no(Estacao, Ramal)`. Só entram os ramais rodando naquela hora e só as estações onde cada um **para** naquele momento (`para_em/4`). Assim, no expresso, piedade não existe para o japeri.
+- **Andar:** de uma parada para a parada vizinha do mesmo ramal, nos dois sentidos.
+- **Baldear:** de `no(E, R1)` para `no(E, R2)` quando os dois param em E agora. Pode ser em qualquer estação onde os dois param, não só nas de `integracao/1`.
+- A viagem começa em **todos** os ramais que param na origem, sem custo. Por isso, ficar no mesmo trem do trecho comum não conta como baldeação: no sábado, de piedade a nilopolis é japeri direto.
 
 ## Busca
 
-- Busca em largura (BFS) por camadas de baldeação: primeiro tenta 0 baldeações, depois 1, depois 2… Para na primeira camada que acha o destino. Assim a rota com menos baldeações vem primeiro.
-- Empate no número de baldeações → vence a de menos estações percorridas.
-- Guardar as estações já visitadas para não andar em círculo. Limite duro de 3 baldeações; acima disso, responde `sem_rota`.
-- A resposta é determinística: mesma pergunta, mesma rota.
+Dijkstra com prioridade `p(Baldeacoes, Distancia, Paradas)`, comparada nessa ordem:
+
+1. **menos baldeações**;
+2. empate → **menos estações percorridas** (distância física no ramal, contando as que o expresso pula). Isso impede voltar para trás atrás de um expresso;
+3. empate → **menos paradas** (prefere o expresso).
+
+Nó já expandido não é expandido de novo, então a busca sempre termina. Há um limite de 3 baldeações. Com a malha atual, todas as 10.506 combinações de estações têm rota, nos três tipos de dia (conferido em 2026-11-19).
 
 ## Sentido
 
-Para cada trecho num ramal, o sentido é o **terminal** para onde o trem segue:
+- Indo para posições maiores → `sentido(terminal do ramal)`.
+- Indo para posições menores → `sentido(início do ramal)`: `central_do_brasil` nos principais, a estação de conexão nas extensões.
 
-- Se a posição de destino é maior que a de origem → `sentido(Terminal do ramal)`, ex.: `sentido(santa_cruz)`.
-- Se é menor → `sentido(central_do_brasil)`.
-- Para extensões, o terminal de ida é o fim da extensão, e o de volta é a estação de conexão (ex.: `sentido(saracuruna)`).
+## Caso exigido: Piedade → ramal japeri, dia útil
 
-## Caso exigido: Piedade → ramal japeri, segunda_a_sexta, pico
+`rota(piedade, nilopolis, segunda_a_sexta, hora(7,30), R)` devolve:
 
-Saída esperada (resumida, sem o `paradas(N)` que o [contrato](contrato-python.md) pede em cada embarque):
-
-1. `embarque(deodoro, sentido(deodoro), piedade, madureira)`
+1. `embarque(deodoro, sentido(deodoro), piedade, madureira, paradas(3))`
 2. `baldeacao(madureira, de(deodoro), para(japeri))`
-3. `embarque(japeri, sentido(japeri), madureira, Destino)`
+3. `embarque(japeri, sentido(japeri), madureira, nilopolis, paradas(5))`
 
-E um aviso explicando o motivo: `aviso(expresso(japeri, central_do_brasil, deodoro))`.
+com o aviso `expresso(japeri, central_do_brasil, deodoro)` e a alternativa `baldeacao(deodoro, de(deodoro), para(japeri))`.
 
-- Ponto de baldeação: a estação de integração mais **próxima** da origem no sentido da viagem que também seja parada do expresso. Para piedade, isso dá madureira, e deodoro fica como alternativa (`alternativa(baldeacao(deodoro))`).
-- Mesma viagem no sábado: sai direto `embarque(japeri, sentido(japeri), piedade, Destino)`, com o aviso `aviso(parador(japeri, sabado))`.
+No sábado, a mesma pergunta dá `embarque(japeri, sentido(japeri), piedade, nilopolis, paradas(11))`, sem baldeação, com o aviso `parador(japeri, sabado)`.
+
+Do Méier, em dia útil, a troca sai em **engenho_de_dentro** (a primeira parada do expresso), com Madureira e Deodoro como alternativas.
+
+## Avisos e alternativas
+
+- `expresso`/`parador` só aparecem quando o trecho percorrido naquele ramal passa por dentro de Central–Deodoro. Nova Iguaçu → Paracambi não recebe aviso de expresso.
+- Alternativa = outra estação de integração **mais adiante** no sentido da viagem, onde os dois ramais da troca também param agora.
 
 ## info_ramal/3
 
-`info_ramal(Ramal, Dia, Detalhes)` devolve um único termo:
+Monta o termo `info(...)` do contrato a partir de `operacao.pl`: a janela de operação, os intervalos de pico e vale, o modo (`expresso(I, F)` quando o ramal tem trecho expresso e o dia tem janela de expresso; senão `parador`), as estações de integração do ramal em ordem e as observações.
 
-```
-info(Ramal, Dia,
-     funcionamento(hora(H1,M1), hora(H2,M2)),
-     intervalo(pico(Min), vale(Min)),
-     modo(ModoNoPico, ModoNoVale),       % expresso | parador
-     trecho_expresso(De, Ate) | nenhum,
-     integracoes([Estacao, ...]),
-     observacoes([Atomo, ...]))
-```
+## Fora do escopo
 
-`observacoes` traz átomos fixos que o Python sabe traduzir, por exemplo `expresso_central_deodoro_no_pico`, `vira_parador_no_fim_de_semana`, `baldeacao_para_extensao_em_japeri`.
+Tempo estimado de viagem, horário exato do próximo trem, baldeação a pé (Madureira ↔ Mercadão de Madureira) e integração com metrô e BRT.

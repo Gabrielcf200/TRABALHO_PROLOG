@@ -1,5 +1,7 @@
 # Etapa 03 — Roteador e info_ramal
 
+> **Concluída em 2026-11-19.** `rota/5` (Dijkstra por baldeações → distância → paradas) e `info_ramal/3` implementados. 53 testes passando; todas as 10.506 combinações de estações dão rota nos três tipos de dia.
+
 **Objetivo:** `roteador.pl` com `rota/5` e `info_ramal/3`, devolvendo exatamente o formato do contrato.
 
 **Depende de:** [etapa 02](02-operacao.md).
@@ -19,8 +21,8 @@
 
 - `rota(piedade, nilopolis, segunda_a_sexta, hora(7,30), R)` dá 1 baldeação, em madureira, de deodoro para japeri.
 - `rota(piedade, nilopolis, sabado, hora(10,0), R)` dá 0 baldeações, japeri direto, com o aviso `parador`.
-- `rota(piedade, centro, sabado, hora(10,0), R)` sai em `sentido(central_do_brasil)` e tem destino `central_do_brasil`, com o aviso `origem_por_bairro(centro, central_do_brasil)`.
-- `rota(bangu, duque_de_caxias, segunda_a_sexta, hora(8,0), R)` faz baldeação na central ou em sao_cristovao (a escolha depende do trecho inicial confirmado na etapa 01).
+- `rota(piedade, centro, sabado, hora(10,0), R)` sai em `sentido(central_do_brasil)` e tem destino `central_do_brasil`, com o aviso `destino_por_bairro(centro, central_do_brasil)`.
+- `rota(bangu, duque_de_caxias, segunda_a_sexta, hora(8,0), R)` faz 1 baldeação, de santa_cruz para saracuruna, na central, em sao_cristovao ou no maracana (deu maracana).
 - `rota(meier, meier, ...)` dá `erro(mesma_estacao(meier))`.
 - `rota(meier, japeri, segunda_a_sexta, hora(2,0), R)` dá `erro(fora_de_operacao(...))`.
 - Nenhuma consulta trava (a busca sempre termina).

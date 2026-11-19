@@ -31,6 +31,6 @@ swipl -g run_tests -t halt testes/testes.pl
 
 ## Estado
 
-Etapas 00, 01 e 02 concluídas: estações em `src/estacoes.pl`, horários e expresso × parador em `src/operacao.pl`. Próximo passo: [etapa 03](etapas/03-roteador.md).
+Etapas 00 a 03 concluídas: estações em `src/estacoes.pl`, horários e expresso × parador em `src/operacao.pl`, rotas e `info_ramal/3` em `src/roteador.pl`. Próximo passo: [etapa 04](etapas/04-testes-e-exemplos.md) (exemplos de consulta e teste de contrato).
 
 Desde 30/05/2026 a operadora dos trens é a TrensRJ, não mais a SuperVia (detalhes em [spec/dados.md](spec/dados.md)).

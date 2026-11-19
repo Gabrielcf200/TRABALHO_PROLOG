@@ -174,7 +174,12 @@ bairro_estacao(baixada,                nova_iguacu).
    Ordem: estação -> apelido -> bairro. Nunca falha.
    ------------------------------------------------------------------ */
 
-resolver_local(X, ok(estacao(X)))   :- estacao_existe(X), !.
-resolver_local(X, ok(estacao(E)))   :- atom(X), apelido(X, E), !.
-resolver_local(X, ok(estacao(E)))   :- atom(X), bairro_estacao(X, E), !.
-resolver_local(X, erro(local_desconhecido(X))).
+% Calcula antes de unificar com a saída: funciona mesmo se a saída já vier
+% preenchida, ex.: resolver_local(meier, erro(_)) falha em vez de mentir.
+resolver_local(X, Resposta) :-
+    (   estacao_existe(X)                -> R = ok(estacao(X))
+    ;   atom(X), apelido(X, E)           -> R = ok(estacao(E))
+    ;   atom(X), bairro_estacao(X, E)    -> R = ok(estacao(E))
+    ;   R = erro(local_desconhecido(X))
+    ),
+    Resposta = R.

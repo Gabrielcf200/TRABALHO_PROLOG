@@ -73,4 +73,4 @@ Consequência para a rota: em dia útil até 21h, uma estação intermediária d
 
 ## Fora de operação
 
-Se nenhum ramal da rota está rodando na hora pedida, a resposta é `erro(fora_de_operacao(Dia, Hora, abre(hora(H,M))))`. Depois do último trem, `abre` traz a primeira abertura do **mesmo** tipo de dia, porque o Prolog não sabe qual é o dia seguinte; o Python ajusta isso. Se só um trecho estiver fechado (uma extensão, por exemplo), a rota volta com um aviso.
+Ramal fechado simplesmente some do grafo. Se por isso não sobra rota e algum ramal que atende a origem ou o destino está fechado, a resposta é `erro(fora_de_operacao(Dia, Hora, abre(hora(H,M))))`. Se sobra rota por outro caminho, ela volta normalmente. Depois do último trem, `abre` traz a primeira abertura do **mesmo** tipo de dia, porque o Prolog não sabe qual é o dia seguinte; o Python ajusta isso.

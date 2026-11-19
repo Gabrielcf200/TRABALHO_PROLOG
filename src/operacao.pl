@@ -13,6 +13,7 @@
     faixa/4,               % ?Dia, ?Faixa, ?Inicio, ?Fim  (só as faixas de pico)
     paradas_expresso/1,    % ?Estacao
     trecho_expresso/3,     % ?Ramal, ?De, ?Ate
+    janela_expresso/3,     % ?Dia, ?Inicio, ?Fim
     em_operacao/3,         % +Ramal, +Dia, +Hora
     faixa_atual/3,         % +Dia, +Hora, -Faixa      pico | vale
     modo/4,                % +Ramal, +Dia, +Hora, -Modo  expresso | parador
