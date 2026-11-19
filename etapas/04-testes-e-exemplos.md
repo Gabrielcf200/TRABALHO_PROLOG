@@ -1,5 +1,7 @@
 # Etapa 04 — Testes e exemplos de consulta
 
+> **Concluída em 2026-11-19.** 9 exemplos com a resposta real no fim de `src/main.pl`, cada um conferido por um teste. Teste de contrato aplicado a ~1.200 rotas (todas as estações até os terminais, dia útil e sábado) e aos erros. 63 testes passando.
+
 **Objetivo:** provar que tudo funciona e deixar consultas prontas para o Gabriel e para quem fizer a camada Python.
 
 **Depende de:** [etapa 03](03-roteador.md).

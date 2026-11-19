@@ -222,13 +222,14 @@ test(hora_invalida) :-
 test(entrada_sem_valor_nao_quebra) :-
     rota(_, meier, sabado, hora(10, 0), R), R = erro(local_desconhecido(_)).
 
-% Toda combinação de estações tem resposta ok ou erro, e a busca termina.
-test(todas_as_rotas_terminam) :-
+% Toda estação até os terminais: a busca termina e a resposta segue o contrato.
+test(todas_as_rotas_seguem_o_contrato) :-
     findall(E, estacoes:estacao_ramal(E, _, _), Es0), sort(Es0, Es),
     forall(( member(O, Es), member(D, [central_do_brasil, santa_cruz, japeri,
-                                       belford_roxo, vila_inhomirim, guapimirim]) ),
-           ( rota(O, D, segunda_a_sexta, hora(10, 0), R),
-             ( R = ok(rota(_, _, _, _, _, _)) ; R = erro(_) ) )).
+                                       belford_roxo, vila_inhomirim, guapimirim]),
+             member(Dia-H, [segunda_a_sexta-hora(7,30), sabado-hora(10,0)]) ),
+           ( rota(O, D, Dia, H, R),
+             assertion(contrato_rota(R)) )).
 
 test(info_ramal_japeri_dia_util) :-
     info_ramal(japeri, segunda_a_sexta, R),
@@ -253,3 +254,124 @@ test(info_ramal_erros) :-
     info_ramal(japeri, terca, R2), R2 == erro(dia_invalido(terca)).
 
 :- end_tests(roteador).
+
+/*  Etapa 04 — exemplos do main.pl e contrato (spec/contrato-python.md) */
+
+% --- Checagem de formato, igual ao que o Python vai parsear ---
+contrato_rota(erro(E)) :- contrato_erro(E).
+contrato_rota(ok(rota(origem(O), destino(D), passos(Ps), baldeacoes(B),
+                      avisos(As), alternativas(Alts)))) :-
+    atom(O), atom(D),
+    Ps = [P0|_], P0 = embarque(_, _, O, _, _),
+    last(Ps, PN), PN = embarque(_, _, _, D, _),
+    passos_alternados(Ps),
+    integer(B),
+    include([X]>>(X = baldeacao(_, _, _)), Ps, Bs), length(Bs, B),
+    maplist(contrato_aviso, As),
+    maplist([alternativa(baldeacao(E, de(R1), para(R2)))]>>atom_list([E, R1, R2]), Alts).
+
+passos_alternados([E]) :- contrato_embarque(E).
+passos_alternados([E, baldeacao(Est, de(R1), para(R2))|T]) :-
+    contrato_embarque(E), E = embarque(R1, _, _, Est, _),
+    T = [embarque(R2, _, Est, _, _)|_],
+    passos_alternados(T).
+
+contrato_embarque(embarque(R, sentido(S), De, Ate, paradas(N))) :-
+    atom_list([R, S, De, Ate]), integer(N), N > 0.
+
+contrato_aviso(origem_por_bairro(X, E))  :- atom_list([X, E]).
+contrato_aviso(destino_por_bairro(X, E)) :- atom_list([X, E]).
+contrato_aviso(expresso(R, De, Ate))     :- atom_list([R, De, Ate]).
+contrato_aviso(parador(R, Dia))          :- atom_list([R, Dia]).
+contrato_aviso(ultima_viagem_proxima(R)) :- atom(R).
+
+contrato_erro(local_desconhecido(_)).
+contrato_erro(ramal_desconhecido(_)).
+contrato_erro(dia_invalido(_)).
+contrato_erro(hora_invalida(_)).
+contrato_erro(mesma_estacao(E))                           :- atom(E).
+contrato_erro(fora_de_operacao(D, hora(_, _), abre(hora(H, M)))) :- atom(D), integer(H), integer(M).
+contrato_erro(sem_rota(O, D))                             :- atom_list([O, D]).
+
+atom_list(L) :- maplist(atom, L).
+
+:- begin_tests(exemplos).
+
+test(exemplo_1_trajeto_direto) :-
+    rota(meier, central_do_brasil, segunda_a_sexta, hora(9,0), R),
+    R == ok(rota(origem(meier), destino(central_do_brasil),
+                 passos([embarque(deodoro, sentido(central_do_brasil),
+                                  meier, central_do_brasil, paradas(8))]),
+                 baldeacoes(0), avisos([]), alternativas([]))).
+
+test(exemplo_2_baldeacao_dia_util) :-
+    rota(piedade, nilopolis, segunda_a_sexta, hora(7,30), R),
+    R == ok(rota(origem(piedade), destino(nilopolis),
+                 passos([embarque(deodoro, sentido(deodoro), piedade, madureira, paradas(3)),
+                         baldeacao(madureira, de(deodoro), para(japeri)),
+                         embarque(japeri, sentido(japeri), madureira, nilopolis, paradas(5))]),
+                 baldeacoes(1),
+                 avisos([expresso(japeri, central_do_brasil, deodoro)]),
+                 alternativas([alternativa(baldeacao(deodoro, de(deodoro), para(japeri)))]))).
+
+test(exemplo_3_mesma_viagem_sabado) :-
+    rota(piedade, nilopolis, sabado, hora(10,0), R),
+    R == ok(rota(origem(piedade), destino(nilopolis),
+                 passos([embarque(japeri, sentido(japeri), piedade, nilopolis, paradas(11))]),
+                 baldeacoes(0), avisos([parador(japeri, sabado)]), alternativas([]))).
+
+test(exemplo_4_info_dia_util) :-
+    info_ramal(japeri, segunda_a_sexta, R),
+    R == ok(info(japeri, segunda_a_sexta,
+                 funcionamento(hora(4,30), hora(23,0)),
+                 intervalo(pico(8), vale(20)),
+                 modo(expresso(hora(4,30), hora(21,0))),
+                 trecho_expresso(central_do_brasil, deodoro),
+                 integracoes([central_do_brasil, sao_cristovao, maracana,
+                              engenho_de_dentro, madureira, deodoro, japeri]),
+                 observacoes([expresso_entre_central_e_deodoro,
+                              parador_fora_da_janela_do_expresso,
+                              extensao(paracambi, em(japeri))]))).
+
+test(exemplo_5_info_domingo) :-
+    info_ramal(japeri, domingo_feriado, R),
+    R == ok(info(japeri, domingo_feriado,
+                 funcionamento(hora(5,0), hora(21,0)),
+                 intervalo(pico(35), vale(35)),
+                 modo(parador), nenhum,
+                 integracoes([central_do_brasil, sao_cristovao, maracana,
+                              engenho_de_dentro, madureira, deodoro, japeri]),
+                 observacoes([parador_o_dia_todo, extensao(paracambi, em(japeri))]))).
+
+test(exemplo_6_fora_do_horario) :-
+    rota(meier, japeri, segunda_a_sexta, hora(2,0), R),
+    R == erro(fora_de_operacao(segunda_a_sexta, hora(2,0), abre(hora(4,30)))).
+
+test(exemplo_7_bairro) :-
+    rota(tijuca, bangu, sabado, hora(15,0), R),
+    R == ok(rota(origem(maracana), destino(bangu),
+                 passos([embarque(santa_cruz, sentido(santa_cruz), maracana, bangu, paradas(21))]),
+                 baldeacoes(0),
+                 avisos([origem_por_bairro(tijuca, maracana), parador(santa_cruz, sabado)]),
+                 alternativas([]))).
+
+test(exemplo_8_extensao) :-
+    rota(nova_iguacu, paracambi, segunda_a_sexta, hora(10,0), R),
+    R == ok(rota(origem(nova_iguacu), destino(paracambi),
+                 passos([embarque(japeri, sentido(japeri), nova_iguacu, japeri, paradas(5)),
+                         baldeacao(japeri, de(japeri), para(paracambi)),
+                         embarque(paracambi, sentido(paracambi), japeri, paracambi, paradas(2))]),
+                 baldeacoes(1), avisos([]), alternativas([]))).
+
+test(exemplo_9_resolver_local) :-
+    resolver_local(engenhao, R), R == ok(estacao(engenho_de_dentro)).
+
+test(erros_seguem_o_contrato) :-
+    forall(member(Q, [rota(xyz, meier, sabado, hora(10,0), R),
+                      rota(meier, meier, sabado, hora(10,0), R),
+                      rota(meier, japeri, terca, hora(10,0), R),
+                      rota(meier, japeri, sabado, hora(25,0), R),
+                      rota(tijuca, belford_roxo, domingo_feriado, hora(18,0), R)]),
+           ( copy_term(Q-R, Q1-R1), call(Q1), assertion(contrato_rota(R1)) )).
+
+:- end_tests(exemplos).

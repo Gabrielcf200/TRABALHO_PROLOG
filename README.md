@@ -31,6 +31,10 @@ swipl -g run_tests -t halt testes/testes.pl
 
 ## Estado
 
-Etapas 00 a 03 concluídas: estações em `src/estacoes.pl`, horários e expresso × parador em `src/operacao.pl`, rotas e `info_ramal/3` em `src/roteador.pl`. Próximo passo: [etapa 04](etapas/04-testes-e-exemplos.md) (exemplos de consulta e teste de contrato).
+Etapas 00 a 04 concluídas. O núcleo está pronto para a camada Python, que só precisa seguir [spec/contrato-python.md](spec/contrato-python.md). Consultas de exemplo com as respostas reais ficam no fim de [src/main.pl](src/main.pl).
+
+Pendências conhecidas:
+- conferir estações e horários na fonte oficial da TrensRJ (o que falta está marcado em [spec/dados.md](spec/dados.md) e [spec/operacao.md](spec/operacao.md));
+- fora do escopo por enquanto: tempo de viagem, horário do próximo trem, baldeação a pé, metrô e BRT.
 
 Desde 30/05/2026 a operadora dos trens é a TrensRJ, não mais a SuperVia (detalhes em [spec/dados.md](spec/dados.md)).
