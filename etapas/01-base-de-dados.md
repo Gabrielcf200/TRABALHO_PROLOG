@@ -1,5 +1,7 @@
 # Etapa 01 — Base de dados da malha
 
+> **Concluída em 2026-11-19.** Dados conferidos em fontes secundárias (Wikipedia e Diário do Rio), não em fonte oficial: o que ficou pendente está marcado *(a conferir)* em [spec/dados.md](../spec/dados.md). Os 15 testes passam.
+
 **Objetivo:** `estacoes.pl` com todos os ramais, extensões, estações em ordem, integrações, apelidos e bairros.
 
 **Depende de:** [etapa 00](00-ambiente.md).

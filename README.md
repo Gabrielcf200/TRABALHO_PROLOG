@@ -31,4 +31,6 @@ swipl -g run_tests -t halt testes/testes.pl
 
 ## Estado
 
-Etapa 00 concluída: os módulos existem, mas estão vazios. Próximo passo: [etapa 01](etapas/01-base-de-dados.md).
+Etapas 00 e 01 concluídas: a base de estações está em `src/estacoes.pl`. Próximo passo: [etapa 02](etapas/02-operacao.md).
+
+Desde 30/05/2026 a operadora dos trens é a TrensRJ, não mais a SuperVia (detalhes em [spec/dados.md](spec/dados.md)).

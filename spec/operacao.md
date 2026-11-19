@@ -41,9 +41,11 @@ Faixas de pico em dia útil: 05:00–09:00 e 16:00–20:00. Fora delas, e no sá
 
 O **modo** de cada ramal num dado dia e hora é `expresso` ou `parador`:
 
-1. `japeri` e `santa_cruz` em `segunda_a_sexta` **e** faixa `pico` → `expresso` entre central_do_brasil e deodoro. Nesse trecho só param em: central_do_brasil, sao_cristovao, maracana, engenho_de_dentro, madureira, deodoro. Depois de Deodoro param em todas.
+1. `japeri` e `santa_cruz` em `segunda_a_sexta` **e** faixa `pico` → `expresso` entre central_do_brasil e deodoro. Nesse trecho só param em: central_do_brasil, sao_cristovao, maracana, silva_freire, engenho_de_dentro, madureira, deodoro (lista do Diário do Rio, 27/01/2026). Depois de Deodoro param em todas.
 2. Os mesmos ramais em `sabado`, `domingo_feriado`, ou em dia útil fora do pico (vale/madrugada) → `parador` em todo o trecho.
 3. `deodoro`, `belford_roxo`, `saracuruna` e as extensões → sempre `parador`.
+
+Em 2026 houve dias especiais (ex.: eleições) em que o ramal deodoro não rodou e os paradores de Japeri e Santa Cruz cobriram o tronco ([Tupi](https://www.tupi.fm/?p=2505063)). Casos assim ficam fora do escopo; o calendário só conhece os três tipos de dia.
 
 Consequência para a rota: no pico de dia útil, uma estação intermediária do tronco (piedade, meier, riachuelo…) **não** é atendida por japeri nem por santa_cruz. Quem sai dela para esses ramais precisa pegar o deodoro e fazer baldeação. Ver [roteador.md](roteador.md).
 
