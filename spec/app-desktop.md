@@ -27,6 +27,7 @@ O Python roda `swipl src/api.pl`, manda **um** JSON no stdin e lê **um** JSON n
 | `info_ramal` | `ramal`, `dia` | `info_ramal/3` |
 | `ramais_do_dia` | `dia` | `info_ramal/3` dos 5 ramais principais → `ok(ramais([info(...), ...]))` |
 | `resolver_local` | `local` | `resolver_local/2` |
+| `locais` | — | todos os nomes que `resolver_local/2` entende → `ok(locais(estacoes([...]), apelidos([...]), bairros([...])))` (usado no prompt da LLM) |
 
 **Resposta:** o mesmo termo do contrato, convertido de forma genérica:
 
@@ -43,6 +44,46 @@ Exemplo: `ok(estacao(maracana))` vira `{"ok": {"estacao": "maracana"}}`.
 Problemas na entrada (JSON inválido, campo faltando) viram `{"erro": {"interno": "..."}}`. Ação desconhecida vira `{"erro": {"acao_desconhecida": "..."}}`.
 
 Cada consulta abre um `swipl` novo, por volta de 0,3 s. O BOM que o PowerShell coloca no começo do texto é descartado.
+
+## LLM: `app/llm.py`
+
+**Provedor:** Google Gemini, no plano gratuito, pelo endpoint compatível com OpenAI (pacote `openai`). Tudo se configura em `app/.env`, criado a partir do `app/.env.example`:
+
+| Variável | Padrão |
+|----------|--------|
+| `LLM_API_KEY` | — (obrigatória; gratuita em aistudio.google.com/apikey) |
+| `LLM_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
+| `LLM_MODEL` | `gemini-flash-latest` (alias para o Flash mais novo) |
+
+Para ver os modelos que a sua chave enxerga, rode `python app/llm.py --modelos`. Para trocar para Groq, OpenRouter ou Ollama, basta mudar essas três variáveis. No plano gratuito do Gemini, o Google pode usar as mensagens para treinar modelos.
+
+**interpretar(texto, dia, hora) → pedido.** A LLM devolve só JSON, no formato:
+
+```json
+{"acao": "rota", "origem": "meier", "destino": "bangu", "dia": "sabado", "hora": [10, 0]}
+{"acao": "info_ramal", "ramal": "japeri", "dia": "domingo_feriado"}
+{"acao": "conversa"}
+```
+
+O prompt leva a lista de nomes da ação `locais`, o dia da barra lateral e a hora do relógio do PC como padrão. Cada pergunta é interpretada sozinha, sem memória da conversa (decisão do Gabriel).
+
+**Validação (fronteira de confiança), em `validar()`:**
+- a ação precisa estar na lista;
+- dia ou hora inválidos viram o padrão;
+- os nomes passam por `normalizar()` (tira acento, minúsculas, `_`) e precisam casar com `^[a-z0-9_]{1,60}$`;
+- o ramal precisa ser um dos 8;
+- rota sem origem ou sem destino vira `falta_local`, e o app pergunta ao usuário em vez de chamar o Prolog.
+
+Se o JSON vier quebrado, o app tenta de novo uma vez. Se falhar outra vez, mostra "Não entendi a pergunta…".
+
+**responder(pergunta, pedido, resultado) → texto.** A LLM recebe a pergunta, o pedido e o JSON do Prolog, junto com uma explicação de cada campo. Responde em português, com passos numerados e os nomes com acento, sem inventar nada que não esteja no JSON. Para `conversa`, responde em uma ou duas frases e puxa o assunto de volta para os trens.
+
+**Erros** (`ErroLLM`, já com texto para o usuário): falta de chave, chave recusada, modelo inexistente, cota gratuita acabada e sem internet.
+
+## Pipeline: `app/pipeline.py`
+
+- `perguntar(texto, dia, hora=None) -> str` sempre devolve um texto para o chat. Erros da LLM ou do Prolog viram mensagem, nunca exceção.
+- `ramais_ativos(dia) -> [("Japeri", "Expresso"), ...]` alimenta a barra lateral.
 
 ## Onde o swipl é procurado
 

@@ -55,6 +55,8 @@ responder(P, T) :-
     ;   Acao == resolver_local
     ->  campo(local, P, L),
         resolver_local(L, T)
+    ;   Acao == locais
+    ->  locais(T)
     ;   T = erro(acao_desconhecida(Acao))
     ).
 
@@ -67,6 +69,12 @@ ramais_do_dia(Dia, T) :-
     ;   maplist([ok(X), X]>>true, Is, Infos),
         T = ok(ramais(Infos))
     ).
+
+% Todos os nomes que resolver_local/2 entende (para o prompt da LLM).
+locais(ok(locais(estacoes(Es), apelidos(As), bairros(Bs)))) :-
+    findall(E, estacao_ramal(E, _, _), Es0), sort(Es0, Es),
+    findall(A, apelido(A, _), As0), sort(As0, As),
+    findall(B, bairro_estacao(B, _), Bs0), sort(Bs0, Bs).
 
 % Campo obrigatório, como átomo (string do JSON -> átomo).
 campo(K, P, V) :-

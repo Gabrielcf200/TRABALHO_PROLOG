@@ -60,6 +60,12 @@ class TestPonte(unittest.TestCase):
         nomes = [i["info"][0] for i in r["ok"]["ramais"]]
         self.assertEqual(nomes, ["deodoro", "santa_cruz", "japeri", "belford_roxo", "saracuruna"])
 
+    def test_locais_para_o_prompt(self):
+        locais = campos(consultar({"acao": "locais"})["ok"]["locais"])
+        self.assertIn("meier", locais["estacoes"])
+        self.assertIn("engenhao", locais["apelidos"])
+        self.assertIn("tijuca", locais["bairros"])
+
     def test_campo_ausente_vira_erro(self):
         r = consultar({"acao": "rota", "origem": "meier"})
         self.assertIn("interno", r["erro"])
