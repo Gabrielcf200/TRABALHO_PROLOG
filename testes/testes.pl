@@ -79,3 +79,69 @@ test(resolver_nao_atomo) :-
     resolver_local(42, R), R == erro(local_desconhecido(42)).
 
 :- end_tests(estacoes).
+
+/*  Etapa 02 — operação (critérios de etapas/02-operacao.md) */
+:- begin_tests(operacao).
+
+test(japeri_expresso_no_pico_util) :-
+    modo(japeri, segunda_a_sexta, hora(7, 30), M), M == expresso.
+
+test(japeri_parador_no_sabado) :-
+    modo(japeri, sabado, hora(7, 30), M), M == parador.
+
+test(japeri_expresso_no_horario_comercial) :-
+    modo(japeri, segunda_a_sexta, hora(12, 0), M), M == expresso.
+
+test(japeri_parador_a_noite_util) :-
+    modo(japeri, segunda_a_sexta, hora(21, 30), M), M == parador.
+
+test(belford_roxo_fecha_mais_cedo_no_domingo) :-
+    \+ em_operacao(belford_roxo, domingo_feriado, hora(18, 0)),
+    em_operacao(deodoro, domingo_feriado, hora(18, 0)).
+
+test(faixa_de_pico) :-
+    faixa_atual(segunda_a_sexta, hora(7, 0), P), P == pico,
+    faixa_atual(segunda_a_sexta, hora(12, 0), V), V == vale,
+    faixa_atual(sabado, hora(7, 0), S), S == vale.
+
+test(deodoro_sempre_parador, forall(member(H, [hora(7,30), hora(12,0)]))) :-
+    modo(deodoro, segunda_a_sexta, H, M), M == parador.
+
+test(expresso_pula_piedade) :-
+    \+ para_em(japeri, piedade, segunda_a_sexta, hora(7, 30)).
+
+test(expresso_para_em_madureira, [nondet]) :-
+    para_em(japeri, madureira, segunda_a_sexta, hora(7, 30)).
+
+test(expresso_para_em_todas_depois_de_deodoro, [nondet]) :-
+    para_em(japeri, nilopolis, segunda_a_sexta, hora(7, 30)).
+
+test(parador_no_sabado_para_em_piedade, [nondet]) :-
+    para_em(japeri, piedade, sabado, hora(10, 0)).
+
+test(deodoro_para_em_piedade_quando_roda,
+     [nondet, forall(member(D-H, [segunda_a_sexta-hora(7,30), sabado-hora(10,0), domingo_feriado-hora(15,0)]))]) :-
+    para_em(deodoro, piedade, D, H).
+
+test(fechado_de_madrugada) :-
+    \+ em_operacao(deodoro, segunda_a_sexta, hora(2, 0)).
+
+test(fim_da_janela_exclusivo) :-
+    operacao(deodoro, segunda_a_sexta, _, Fim),
+    \+ em_operacao(deodoro, segunda_a_sexta, Fim).
+
+test(proxima_abertura_de_madrugada) :-
+    proxima_abertura(segunda_a_sexta, hora(2, 0), A), A == abre(hora(4, 30)).
+
+test(proxima_abertura_depois_do_ultimo_trem) :-
+    proxima_abertura(segunda_a_sexta, hora(23, 30), A), A == abre(hora(4, 30)).
+
+test(intervalo_definido_para_todos, [forall((ramal(R, _), dia(D), member(F, [pico, vale])))]) :-
+    once(intervalo(R, D, F, M)), integer(M), M > 0.
+
+test(hora_invalida) :-
+    \+ hora_valida(hora(24, 0)),
+    \+ hora_valida(hora(7, 60)),
+    \+ hora_valida(sete).
+
+:- end_tests(operacao).

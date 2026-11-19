@@ -31,6 +31,6 @@ swipl -g run_tests -t halt testes/testes.pl
 
 ## Estado
 
-Etapas 00 e 01 concluídas: a base de estações está em `src/estacoes.pl`. Próximo passo: [etapa 02](etapas/02-operacao.md).
+Etapas 00, 01 e 02 concluídas: estações em `src/estacoes.pl`, horários e expresso × parador em `src/operacao.pl`. Próximo passo: [etapa 03](etapas/03-roteador.md).
 
 Desde 30/05/2026 a operadora dos trens é a TrensRJ, não mais a SuperVia (detalhes em [spec/dados.md](spec/dados.md)).

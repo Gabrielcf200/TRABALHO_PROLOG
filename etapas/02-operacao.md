@@ -1,5 +1,7 @@
 # Etapa 02 — Operação e calendário
 
+> **Concluída em 2026-11-19.** A grade oficial da TrensRJ não foi encontrada; os valores com fonte e as estimativas estão separados em [spec/operacao.md](../spec/operacao.md). A janela do expresso virou dia útil 04:30–21:00 (fonte de 2024), em vez de só o pico. 33 testes passando.
+
 **Objetivo:** `operacao.pl` que responde, para qualquer ramal, dia e hora: se está rodando, em que modo (expresso ou parador), com que intervalo, e em quais estações para.
 
 **Depende de:** [etapa 01](01-base-de-dados.md).
@@ -20,7 +22,7 @@
 
 - `modo(japeri, segunda_a_sexta, hora(7,30), expresso)` é verdadeiro.
 - `modo(japeri, sabado, hora(7,30), parador)` é verdadeiro.
-- `modo(japeri, segunda_a_sexta, hora(12,0), parador)` é verdadeiro (vale).
+- `modo(japeri, segunda_a_sexta, hora(21,30), parador)` é verdadeiro (fora da janela do expresso).
 - `para_em(japeri, piedade, segunda_a_sexta, hora(7,30))` falha; o mesmo com `sabado` dá verdadeiro.
 - `para_em(deodoro, piedade, D, H)` é verdadeiro sempre que o ramal deodoro estiver rodando.
 - `em_operacao(deodoro, segunda_a_sexta, hora(2,0))` falha.
