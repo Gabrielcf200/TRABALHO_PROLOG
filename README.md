@@ -1,8 +1,8 @@
 # SuperVia-Prolog
 
-Núcleo de regras em SWI-Prolog para rotas de trem da SuperVia (Rio de Janeiro), estilo Moovit. Uma camada Python + LLM (outro projeto) traduz a pergunta do usuário em consulta Prolog e a resposta de volta em texto.
+Rotas de trem da SuperVia (Rio de Janeiro), no estilo do Moovit. O núcleo de regras é em SWI-Prolog. Por cima dele há um app desktop em Python: o usuário escreve em português, uma LLM (Gemini) entende o pedido, o Prolog calcula a rota e a LLM explica a resposta.
 
-**Tecnologias:** SWI-Prolog 11 (funciona a partir do 9), plunit (testes).
+**Tecnologias:** SWI-Prolog 11 (funciona a partir do 9) e plunit; Python 3.13, CustomTkinter, `openai` (apontando para o Gemini) e python-dotenv.
 
 ## Pasta
 
@@ -12,26 +12,49 @@ Núcleo de regras em SWI-Prolog para rotas de trem da SuperVia (Rio de Janeiro),
 | [spec/dados.md](spec/dados.md) | ramais, extensões, estações, integrações, bairros |
 | [spec/operacao.md](spec/operacao.md) | calendário, horários, intervalos, expresso × parador |
 | [spec/roteador.md](spec/roteador.md) | busca de rota, sentido, baldeação, `info_ramal/3` |
-| [spec/contrato-python.md](spec/contrato-python.md) | formato exato das respostas para o Python |
-| [etapas/00-ambiente.md](etapas/00-ambiente.md) | instalar e montar o esqueleto |
-| [etapas/01-base-de-dados.md](etapas/01-base-de-dados.md) | `estacoes.pl` |
-| [etapas/02-operacao.md](etapas/02-operacao.md) | `operacao.pl` |
-| [etapas/03-roteador.md](etapas/03-roteador.md) | `roteador.pl` |
-| [etapas/04-testes-e-exemplos.md](etapas/04-testes-e-exemplos.md) | testes e consultas de exemplo |
+| [spec/contrato-python.md](spec/contrato-python.md) | formato exato das respostas do Prolog |
+| [spec/app-desktop.md](spec/app-desktop.md) | ponte JSON, LLM, pipeline e interface |
+| [etapas/](etapas/) | etapas 00 a 08, em ordem (cada uma depende da anterior) |
 
-As etapas vão em ordem: cada uma depende da anterior.
+## Como rodar
 
-## Como rodar (depois da etapa 00)
+1. Instalar o SWI-Prolog e as dependências do Python:
 
 ```bash
 winget install SWI-Prolog.SWI-Prolog
+```
+```bash
+python -m pip install -r app/requirements.txt
+```
+
+2. Copiar `app/.env.example` para `app/.env` e colar a chave gratuita do Gemini em `LLM_API_KEY`. A chave é criada em aistudio.google.com/apikey.
+
+3. Abrir o app:
+
+```bash
+python app/main.py
+```
+
+**Só o Prolog, sem o app:**
+
+```bash
 swipl src/main.pl
+```
+
+**Testes:**
+
+```bash
 swipl -g run_tests -t halt testes/testes.pl
 ```
+```bash
+python -m unittest discover app/testes
+```
+
+Se o terminal não achar o `swipl`, use o caminho completo: `& "C:\Program Files\swipl\bin\swipl.exe"`.
 
 ## Estado
 
-Etapas 00 a 04 concluídas. O núcleo está pronto para a camada Python, que só precisa seguir [spec/contrato-python.md](spec/contrato-python.md). Consultas de exemplo com as respostas reais ficam no fim de [src/main.pl](src/main.pl).
+Etapas 00 a 07 concluídas. O app funciona de ponta a ponta nos testes com uma LLM falsa. Falta testar com a chave real do Gemini. Próximo passo: [etapa 08](etapas/08-executavel.md), o `.exe`.
 
 Pendências conhecidas:
 - conferir estações e horários na fonte oficial da TrensRJ (o que falta está marcado em [spec/dados.md](spec/dados.md) e [spec/operacao.md](spec/operacao.md));

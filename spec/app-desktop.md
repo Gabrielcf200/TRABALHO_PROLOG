@@ -85,6 +85,27 @@ Se o JSON vier quebrado, o app tenta de novo uma vez. Se falhar outra vez, mostr
 - `perguntar(texto, dia, hora=None) -> str` sempre devolve um texto para o chat. Erros da LLM ou do Prolog viram mensagem, nunca exceção.
 - `ramais_ativos(dia) -> [("Japeri", "Expresso"), ...]` alimenta a barra lateral.
 
+## Interface: `app/main.py`
+
+CustomTkinter, tema claro ou escuro conforme o Windows. Janela de 1000×660, com mínimo de 820×520.
+
+```
++---------------------+-----------------------------------------------+
+| 🚆 SuperVia IA      |  [Histórico de Rotas]  (CTkScrollableFrame)   |
+| Dia da Simulação:   |    SuperVia IA: boas-vindas                   |
+| [Segunda a Sexta v] |                     Você: pergunta  (direita) |
+| Ramais Ativos:      |    SuperVia IA: resposta          (esquerda)  |
+| • Deodoro (Parador) |                                               |
+| • Japeri (Expresso) |-----------------------------------------------|
+| [Limpar Conversa]   |  [ Digite origem/destino…            ] [ > ]  |
++---------------------+-----------------------------------------------+
+```
+
+- **Barra lateral (260 px):** o dia escolhido vira o padrão quando a pergunta não fala o dia. "Ramais Ativos" mostra os 5 ramais principais e o modo de cada um naquele dia (`ramais_do_dia`), e atualiza quando o dia muda. "Limpar Conversa" apaga o histórico e volta à mensagem de boas-vindas.
+- **Enviar (Enter ou `>`):** aparece a bolha do usuário e a bolha provisória com uma frase sorteada ("Hmm, deixa eu ver…", "Consultando os trilhos…"…). O pipeline roda numa thread, e quando termina o texto da bolha provisória vira a resposta. Enquanto isso o botão fica desativado e um segundo Enter é ignorado.
+- **Threads:** as threads de trabalho nunca tocam na janela. Elas põem `(função, args)` numa fila, que a janela esvazia a cada 80 ms. Chamar `after()` de outra thread falha calado quando o `mainloop` não está rodando.
+- A hora padrão é a do relógio do PC.
+
 ## Onde o swipl é procurado
 
 Nesta ordem: a variável `SWIPL` no `.env`, o `swipl` do PATH e `C:\Program Files\swipl\bin\swipl.exe`.
