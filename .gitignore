@@ -1,4 +1,8 @@
 # Chave da LLM: nunca vai para o git
 app/.env
 __pycache__/
+# Saída do PyInstaller (app/gerar_exe.ps1)
+build/
+dist/
+*.spec
 *.pyc

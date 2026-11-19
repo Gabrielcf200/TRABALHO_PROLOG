@@ -16,7 +16,9 @@ from dotenv import load_dotenv
 
 import prolog
 
-load_dotenv(Path(__file__).with_name(".env"))
+# No .exe, o .env fica ao lado do executável (a chave nunca vai dentro dele).
+PASTA = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
+load_dotenv(PASTA / ".env")
 
 GEMINI = "https://generativelanguage.googleapis.com/v1beta/openai/"
 DIAS = ("segunda_a_sexta", "sabado", "domingo_feriado")

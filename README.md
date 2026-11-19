@@ -35,6 +35,8 @@ python -m pip install -r app/requirements.txt
 python app/main.py
 ```
 
+**Executável (.exe):** `powershell -ExecutionPolicy Bypass -File app\gerar_exe.ps1` gera `dist\SuperViaIA\SuperViaIA.exe`. Ele precisa do SWI-Prolog instalado e de um `.env` ao lado do `.exe` ([etapa 08](etapas/08-executavel.md)).
+
 **Só o Prolog, sem o app:**
 
 ```bash
@@ -54,7 +56,7 @@ Se o terminal não achar o `swipl`, use o caminho completo: `& "C:\Program Files
 
 ## Estado
 
-Etapas 00 a 07 concluídas. O app funciona de ponta a ponta nos testes com uma LLM falsa. Falta testar com a chave real do Gemini. Próximo passo: [etapa 08](etapas/08-executavel.md), o `.exe`.
+Etapas 00 a 08 concluídas. O app e o `.exe` funcionam de ponta a ponta nos testes com uma LLM falsa. **Falta testar com a chave real do Gemini.**
 
 Pendências conhecidas:
 - conferir estações e horários na fonte oficial da TrensRJ (o que falta está marcado em [spec/dados.md](spec/dados.md) e [spec/operacao.md](spec/operacao.md));

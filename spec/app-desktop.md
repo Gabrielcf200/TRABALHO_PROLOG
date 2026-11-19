@@ -106,6 +106,10 @@ CustomTkinter, tema claro ou escuro conforme o Windows. Janela de 1000×660, com
 - **Threads:** as threads de trabalho nunca tocam na janela. Elas põem `(função, args)` numa fila, que a janela esvazia a cada 80 ms. Chamar `after()` de outra thread falha calado quando o `mainloop` não está rodando.
 - A hora padrão é a do relógio do PC.
 
+## Executável
+
+O `app/gerar_exe.ps1` gera `dist\SuperViaIA\SuperViaIA.exe` com o PyInstaller. Os `.pl` vão empacotados, mas o `.env` fica **fora**, ao lado do `.exe`, e o SWI-Prolog continua sendo pré-requisito. Detalhes na [etapa 08](../etapas/08-executavel.md).
+
 ## Onde o swipl é procurado
 
 Nesta ordem: a variável `SWIPL` no `.env`, o `swipl` do PATH e `C:\Program Files\swipl\bin\swipl.exe`.

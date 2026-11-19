@@ -6,9 +6,11 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parent.parent
+# No .exe (PyInstaller), os .pl vão empacotados em sys._MEIPASS/src.
+RAIZ = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
 API = RAIZ / "src" / "api.pl"
 SWIPL_WINDOWS = Path(r"C:\Program Files\swipl\bin\swipl.exe")
 
