@@ -1,0 +1,4 @@
+# Chave da LLM: nunca vai para o git
+app/.env
+__pycache__/
+*.pyc
