@@ -58,6 +58,79 @@ class TestValidar(unittest.TestCase):
                          {"acao": "conversa"})
 
 
+class ClienteFalso:
+    """Imita openai.OpenAI: cada modelo da lista 'falhas' levanta a exceção dada."""
+
+    def __init__(self, falhas):
+        self.falhas, self.chamados = falhas, []
+        self.chat = self
+        self.completions = self
+
+    def create(self, model, **_):
+        self.chamados.append(model)
+        if model in self.falhas:
+            raise self.falhas[model]
+
+        class R:
+            choices = [type("C", (), {"message": type("M", (), {"content": f"ok de {model}"})})]
+        return R()
+
+
+def _timeout():
+    import httpx
+    return llm.openai.APITimeoutError(request=httpx.Request("POST", "http://x"))
+
+
+def _sobrecarga():
+    import httpx
+    req = httpx.Request("POST", "http://x")
+    return llm.openai.InternalServerError("503", response=httpx.Response(503, request=req), body=None)
+
+
+class TestModelos(unittest.TestCase):
+    def setUp(self):
+        import os
+        self.env_antigo = os.environ.get("LLM_MODEL")
+        os.environ["LLM_MODEL"] = "lento, sobrecarregado, bom"
+        self.cliente_original = llm._cliente
+
+    def tearDown(self):
+        import os
+        llm._cliente = self.cliente_original
+        if self.env_antigo is None:
+            os.environ.pop("LLM_MODEL", None)
+        else:
+            os.environ["LLM_MODEL"] = self.env_antigo
+
+    def test_pula_modelo_lento_e_sobrecarregado(self):
+        falso = ClienteFalso({"lento": _timeout(), "sobrecarregado": _sobrecarga()})
+        llm._cliente = lambda: falso
+        self.assertEqual(llm._chat("s", "u"), "ok de bom")
+        self.assertEqual(falso.chamados, ["lento", "sobrecarregado", "bom"])
+
+    def test_limite_gratuito_e_por_modelo_entao_tenta_o_proximo(self):
+        import httpx
+        req = httpx.Request("POST", "http://x")
+        limite = llm.openai.RateLimitError("429", response=httpx.Response(429, request=req), body=None)
+        falso = ClienteFalso({"lento": limite, "sobrecarregado": limite})
+        llm._cliente = lambda: falso
+        self.assertEqual(llm._chat("s", "u"), "ok de bom")
+
+    def test_todos_falham_vira_mensagem_de_sobrecarga(self):
+        falso = ClienteFalso({"lento": _timeout(), "sobrecarregado": _sobrecarga(), "bom": _timeout()})
+        llm._cliente = lambda: falso
+        with self.assertRaises(llm.ErroLLM) as ctx:
+            llm._chat("s", "u")
+        self.assertIn("ocupad", str(ctx.exception))
+
+    def test_cliente_tem_timeout_curto(self):
+        import os
+        os.environ.setdefault("LLM_API_KEY", "x")
+        cli = self.cliente_original()
+        self.assertLessEqual(cli.timeout, 30)
+        self.assertEqual(cli.max_retries, 0)
+
+
 class LLMFalsa:
     """Imita o módulo llm: interpretar devolve um pedido fixo, responder devolve o que recebeu."""
     ErroLLM = llm.ErroLLM

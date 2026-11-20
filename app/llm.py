@@ -38,35 +38,46 @@ def _cliente() -> openai.OpenAI:
     if not chave:
         raise ErroLLM("Falta a chave da LLM. Crie o arquivo app/.env a partir do "
                       "app/.env.example e cole sua chave em LLM_API_KEY.")
-    return openai.OpenAI(base_url=os.environ.get("LLM_BASE_URL", GEMINI), api_key=chave)
+    # Sem isso o SDK espera até 10 min e repete sozinho: o chat parece travado.
+    return openai.OpenAI(base_url=os.environ.get("LLM_BASE_URL", GEMINI), api_key=chave,
+                         timeout=20.0, max_retries=0)
 
 
-def _modelo() -> str:
-    return os.environ.get("LLM_MODEL", "gemini-flash-latest")
+# Modelos gratuitos ficam sobrecarregados com frequência (visto em 2026-11-19 com
+# gemini-flash-latest), então LLM_MODEL aceita uma lista: tenta um por um.
+MODELOS_PADRAO = "gemini-3-flash-preview, gemini-flash-lite-latest, gemini-flash-latest"
+
+
+def _modelos() -> list[str]:
+    return [m.strip() for m in os.environ.get("LLM_MODEL", MODELOS_PADRAO).split(",") if m.strip()]
 
 
 def _chat(sistema: str, usuario: str, json_mode: bool = False) -> str:
     extra = {"response_format": {"type": "json_object"}} if json_mode else {}
-    try:
-        r = _cliente().chat.completions.create(
-            model=_modelo(), temperature=0.2,
-            messages=[{"role": "system", "content": sistema},
-                      {"role": "user", "content": usuario}],
-            **extra,
-        )
-    except openai.AuthenticationError as e:
-        raise ErroLLM("A chave da LLM foi recusada. Confira LLM_API_KEY no app/.env.") from e
-    except openai.NotFoundError as e:
-        raise ErroLLM(f"O modelo '{_modelo()}' não existe para essa chave. Rode "
-                      "'python app/llm.py --modelos' e troque LLM_MODEL no app/.env.") from e
-    except openai.RateLimitError as e:
-        raise ErroLLM("O limite gratuito da LLM acabou por agora. Espere um pouco "
-                      "e tente de novo.") from e
-    except openai.APIConnectionError as e:
-        raise ErroLLM("Não consegui falar com a LLM. Confira sua internet.") from e
-    except openai.APIError as e:
-        raise ErroLLM(f"A LLM respondeu com erro: {e}") from e
-    return r.choices[0].message.content or ""
+    cliente = _cliente()
+    for modelo in _modelos():
+        try:
+            r = cliente.chat.completions.create(
+                model=modelo, temperature=0.2,
+                messages=[{"role": "system", "content": sistema},
+                          {"role": "user", "content": usuario}],
+                **extra,
+            )
+            return r.choices[0].message.content or ""
+        # Lento, sobrecarregado (5xx), inexistente ou no limite gratuito (que é
+        # por modelo): tenta o próximo da lista.
+        except (openai.APITimeoutError, openai.InternalServerError, openai.NotFoundError,
+                openai.RateLimitError):
+            continue
+        except openai.AuthenticationError as e:
+            raise ErroLLM("A chave da LLM foi recusada. Confira LLM_API_KEY no app/.env.") from e
+        except openai.APIConnectionError as e:
+            raise ErroLLM("Não consegui falar com a LLM. Confira sua internet.") from e
+        except openai.APIError as e:
+            raise ErroLLM(f"A LLM respondeu com erro: {e}") from e
+    raise ErroLLM("Os modelos da LLM estão muito ocupados ou no limite gratuito agora ("
+                  + ", ".join(_modelos()) + "). Tente de novo em um minuto, ou troque LLM_MODEL no app/.env "
+                  "(veja as opções com 'python app/llm.py --modelos').")
 
 
 # ---------------------------------------------------------------- interpretar
@@ -196,7 +207,9 @@ Formato: passos numerados para rotas. Escreva os nomes com acento e maiúscula
 
 PROMPT_CONVERSA = """Você é a "SuperVia IA", assistente dos trens urbanos do Rio. \
 Responda em português, em uma ou duas frases simpáticas. Se o assunto não for trem, \
-diga com gentileza que só sabe ajudar com rotas e ramais de trem e dê um exemplo de pergunta."""
+diga com gentileza que só sabe ajudar com rotas e ramais de trem. Exemplos do que você \
+sabe responder: "Como vou de Piedade para a Central no sábado?" e "Como funciona o ramal \
+Japeri no domingo?". Você NÃO sabe horário do próximo trem nem tempo de viagem."""
 
 
 def responder(pergunta: str, pedido: dict, resultado: dict | None) -> str:

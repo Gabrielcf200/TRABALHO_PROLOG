@@ -53,7 +53,9 @@ Cada consulta abre um `swipl` novo, por volta de 0,3 s. O BOM que o PowerShell c
 |----------|--------|
 | `LLM_API_KEY` | — (obrigatória; gratuita em aistudio.google.com/apikey) |
 | `LLM_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
-| `LLM_MODEL` | `gemini-flash-latest` (alias para o Flash mais novo) |
+| `LLM_MODEL` | `gemini-3-flash-preview, gemini-flash-lite-latest, gemini-flash-latest` |
+
+`LLM_MODEL` é uma **lista**, testada em ordem. Cada chamada espera no máximo 20 s, sem nova tentativa automática do SDK. Se um modelo der timeout, 5xx, 404 ou bater no limite gratuito (que é por modelo), o app passa para o próximo da lista. Se todos falharem, aparece "modelos muito ocupados". Por que isso existe: em 2026-11-19, o `gemini-flash-latest` ficou sobrecarregado (às vezes 503, às vezes sem resposta), e o app parecia travado, porque o SDK esperava até 10 min por tentativa.
 
 Para ver os modelos que a sua chave enxerga, rode `python app/llm.py --modelos`. Para trocar para Groq, OpenRouter ou Ollama, basta mudar essas três variáveis. No plano gratuito do Gemini, o Google pode usar as mensagens para treinar modelos.
 
